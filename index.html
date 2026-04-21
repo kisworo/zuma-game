@@ -328,6 +328,7 @@
             nextCtx = nextCanvas.getContext('2d');
 
             generatePath();
+            setupEventListeners();
             gameLoop(0);
         };
 
@@ -970,33 +971,35 @@
         }
 
         // ==================== EVENT LISTENERS ====================
-        canvas.addEventListener('mousemove', (e) => {
-            const rect = canvas.getBoundingClientRect();
-            const mouseX = e.clientX - rect.left;
-            const mouseY = e.clientY - rect.top;
-            
-            cannon.angle = Math.atan2(mouseY - cannon.y, mouseX - cannon.x);
-        });
+        function setupEventListeners() {
+            canvas.addEventListener('mousemove', (e) => {
+                const rect = canvas.getBoundingClientRect();
+                const mouseX = e.clientX - rect.left;
+                const mouseY = e.clientY - rect.top;
+                
+                cannon.angle = Math.atan2(mouseY - cannon.y, mouseX - cannon.x);
+            });
 
-        canvas.addEventListener('mousedown', (e) => {
-            if (e.button === 0) { // Left click
-                shoot();
-            } else if (e.button === 2) { // Right click
-                swapColors();
-            }
-        });
-
-        canvas.addEventListener('contextmenu', (e) => {
-            e.preventDefault();
-        });
-
-        document.addEventListener('keydown', (e) => {
-            if (e.code === 'Space' || e.code === 'Escape') {
-                if (gameState === 'playing' || gameState === 'paused') {
-                    togglePause();
+            canvas.addEventListener('mousedown', (e) => {
+                if (e.button === 0) { // Left click
+                    shoot();
+                } else if (e.button === 2) { // Right click
+                    swapColors();
                 }
-            }
-        });
+            });
+
+            canvas.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+            });
+
+            document.addEventListener('keydown', (e) => {
+                if (e.code === 'Space' || e.code === 'Escape') {
+                    if (gameState === 'playing' || gameState === 'paused') {
+                        togglePause();
+                    }
+                }
+            });
+        }
     </script>
 </body>
 </html>
