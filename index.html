@@ -1,0 +1,1002 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎯 Zuma Game - by Kisworo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #gameContainer {
+            position: relative;
+            width: 1000px;
+            height: 700px;
+            background: radial-gradient(ellipse at center, #1a1a2e 0%, #0a0a15 100%);
+            border-radius: 20px;
+            box-shadow: 0 0 50px rgba(0, 200, 255, 0.3),
+                        0 0 100px rgba(0, 100, 255, 0.2),
+                        inset 0 0 100px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+        }
+
+        #gameCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        #ui {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: #fff;
+            z-index: 10;
+        }
+
+        .stat {
+            background: rgba(0, 0, 0, 0.6);
+            padding: 10px 20px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            border: 2px solid rgba(0, 200, 255, 0.3);
+            backdrop-filter: blur(5px);
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #88ccff;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: bold;
+            color: #00ffff;
+            text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+        }
+
+        #nextBall {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 15px;
+            border-radius: 10px;
+            border: 2px solid rgba(0, 200, 255, 0.3);
+            color: #fff;
+        }
+
+        #nextBallCanvas {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 50%;
+        }
+
+        #gameOver, #startScreen, #pauseScreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        h1 {
+            font-size: 72px;
+            color: #00ffff;
+            text-shadow: 0 0 20px rgba(0, 255, 255, 0.8),
+                         0 0 40px rgba(0, 200, 255, 0.5);
+            margin-bottom: 20px;
+            animation: glow 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes glow {
+            from { text-shadow: 0 0 20px rgba(0, 255, 255, 0.8), 0 0 40px rgba(0, 200, 255, 0.5); }
+            to { text-shadow: 0 0 30px rgba(0, 255, 255, 1), 0 0 60px rgba(0, 200, 255, 0.8); }
+        }
+
+        .subtitle {
+            font-size: 24px;
+            color: #88ccff;
+            margin-bottom: 40px;
+        }
+
+        .btn {
+            padding: 15px 50px;
+            font-size: 20px;
+            background: linear-gradient(135deg, #00ffff 0%, #0088ff 100%);
+            color: #000;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            margin: 10px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 20px rgba(0, 200, 255, 0.4);
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(0, 200, 255, 0.6);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .instructions {
+            background: rgba(0, 0, 0, 0.6);
+            padding: 30px;
+            border-radius: 15px;
+            margin-top: 30px;
+            border: 2px solid rgba(0, 200, 255, 0.3);
+            max-width: 500px;
+        }
+
+        .instructions h3 {
+            color: #00ffff;
+            margin-bottom: 15px;
+            font-size: 20px;
+        }
+
+        .instructions ul {
+            color: #ccc;
+            line-height: 2;
+            list-style: none;
+        }
+
+        .instructions li::before {
+            content: "🎯 ";
+        }
+
+        #levelIndicator {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 120px;
+            color: #00ffff;
+            text-shadow: 0 0 30px rgba(0, 255, 255, 0.8);
+            opacity: 0;
+            pointer-events: none;
+            z-index: 50;
+        }
+
+        .level-animation {
+            animation: levelUp 1.5s ease-out;
+        }
+
+        @keyframes levelUp {
+            0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+            50% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
+            100% { opacity: 0; transform: translate(-50%, -50%) scale(1); }
+        }
+
+        #combo {
+            position: absolute;
+            top: 100px;
+            right: 30px;
+            font-size: 32px;
+            color: #ffcc00;
+            text-shadow: 0 0 20px rgba(255, 200, 0, 0.8);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        #combo.show {
+            opacity: 1;
+            animation: comboPulse 0.5s ease-in-out;
+        }
+
+        @keyframes comboPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.3); }
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <canvas id="gameCanvas" width="1000" height="700"></canvas>
+        
+        <div id="ui">
+            <div class="stat">
+                <div class="stat-label">Score</div>
+                <div class="stat-value" id="scoreValue">0</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Level</div>
+                <div class="stat-value" id="levelValue">1</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Lives</div>
+                <div class="stat-value" id="livesValue">❤️❤️❤️</div>
+            </div>
+        </div>
+
+        <div id="nextBall">
+            <div class="stat-label" style="margin-bottom: 10px;">NEXT</div>
+            <canvas id="nextBallCanvas" width="60" height="60"></canvas>
+        </div>
+
+        <div id="combo">COMBO x<span id="comboCount">0</span></div>
+        <div id="levelIndicator">LEVEL UP!</div>
+
+        <div id="startScreen">
+            <h1>🎯 ZUMA</h1>
+            <div class="subtitle">Classic Ball Matching Game</div>
+            <button class="btn" onclick="startGame()">START GAME</button>
+            <div class="instructions">
+                <h3>Cara Bermain:</h3>
+                <ul>
+                    <li>Gerakkan mouse untuk mengarahkan cannon</li>
+                    <li>Klik kiri untuk menembak bola</li>
+                    <li>Sambungkan 3+ bola dengan warna sama</li>
+                    <li>Cegah bola mencapai ujung jalur!</li>
+                    <li>Klik kanan untuk swap bola (cooldown)</li>
+                </ul>
+            </div>
+        </div>
+
+        <div id="gameOver" class="hidden">
+            <h1>GAME OVER</h1>
+            <div class="subtitle">Final Score: <span id="finalScore">0</span></div>
+            <div class="subtitle">Level Reached: <span id="finalLevel">1</span></div>
+            <button class="btn" onclick="startGame()">PLAY AGAIN</button>
+        </div>
+
+        <div id="pauseScreen" class="hidden">
+            <h1>PAUSED</h1>
+            <button class="btn" onclick="togglePause()">RESUME</button>
+            <button class="btn" onclick="quitGame()">QUIT</button>
+        </div>
+    </div>
+
+    <script>
+        // ==================== GAME CONFIG ====================
+        const CONFIG = {
+            ballRadius: 15,
+            ballSpeed: 0.8,
+            shootSpeed: 12,
+            colors: ['#ff4444', '#44ff44', '#4444ff', '#ffff44', '#ff44ff', '#44ffff'],
+            colorNames: ['red', 'green', 'blue', 'yellow', 'magenta', 'cyan'],
+            spawnInterval: 2000,
+            matchMin: 3,
+            lives: 3
+        };
+
+        // ==================== GAME STATE ====================
+        let canvas, ctx, nextCanvas, nextCtx;
+        let gameState = 'start'; // start, playing, paused, gameover
+        let score = 0;
+        let level = 1;
+        let lives = 3;
+        let combo = 0;
+        let comboTimer = 0;
+
+        // Game objects
+        let balls = [];
+        let projectiles = [];
+        let particles = [];
+        let path = [];
+        
+        // Player
+        let cannon = {
+            x: 500,
+            y: 350,
+            angle: -Math.PI / 2,
+            currentColor: 0,
+            nextColor: 1,
+            swapCooldown: 0
+        };
+
+        // Timers
+        let lastTime = 0;
+        let spawnTimer = 0;
+        let difficulty = 1;
+
+        // ==================== INITIALIZATION ====================
+        window.onload = function() {
+            canvas = document.getElementById('gameCanvas');
+            ctx = canvas.getContext('2d');
+            nextCanvas = document.getElementById('nextBallCanvas');
+            nextCtx = nextCanvas.getContext('2d');
+
+            generatePath();
+            gameLoop(0);
+        };
+
+        // ==================== PATH GENERATION ====================
+        function generatePath() {
+            path = [];
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const spiralTurns = 3;
+            const startRadius = 400;
+            const endRadius = 80;
+            const points = 500;
+
+            for (let i = 0; i < points; i++) {
+                const t = i / points;
+                const angle = t * spiralTurns * Math.PI * 2;
+                const radius = startRadius - (startRadius - endRadius) * t;
+                
+                path.push({
+                    x: centerX + Math.cos(angle) * radius,
+                    y: centerY + Math.sin(angle) * radius
+                });
+            }
+        }
+
+        // ==================== BALL CLASS ====================
+        class Ball {
+            constructor(pathIndex, color, isProjectile = false) {
+                this.pathIndex = pathIndex;
+                this.color = color;
+                this.isProjectile = isProjectile;
+                this.x = 0;
+                this.y = 0;
+                this.radius = CONFIG.ballRadius;
+                this.marked = false;
+                this.scale = 1;
+                this.updatePosition();
+            }
+
+            updatePosition() {
+                if (this.pathIndex >= 0 && this.pathIndex < path.length) {
+                    const pos = path[Math.floor(this.pathIndex)];
+                    this.x = pos.x;
+                    this.y = pos.y;
+                }
+            }
+
+            draw() {
+                if (this.isProjectile) {
+                    // Projectile ball
+                    ctx.save();
+                    ctx.translate(this.x, this.y);
+                    ctx.rotate(Math.atan2(
+                        projectiles.find(p => p.ball === this)?.vy || 0,
+                        projectiles.find(p => p.ball === this)?.vx || 1
+                    ));
+                    
+                    // Ball body
+                    const gradient = ctx.createRadialGradient(-5, -5, 0, 0, 0, this.radius);
+                    gradient.addColorStop(0, '#ffffff');
+                    gradient.addColorStop(0.3, CONFIG.colors[this.color]);
+                    gradient.addColorStop(1, this.darkenColor(CONFIG.colors[this.color], 40));
+                    
+                    ctx.beginPath();
+                    ctx.arc(0, 0, this.radius * this.scale, 0, Math.PI * 2);
+                    ctx.fillStyle = gradient;
+                    ctx.fill();
+                    
+                    // Glow effect
+                    ctx.shadowColor = CONFIG.colors[this.color];
+                    ctx.shadowBlur = 15;
+                    ctx.beginPath();
+                    ctx.arc(0, 0, this.radius * this.scale, 0, Math.PI * 2);
+                    ctx.fillStyle = CONFIG.colors[this.color];
+                    ctx.fill();
+                    
+                    ctx.restore();
+                } else {
+                    // Path ball
+                    ctx.save();
+                    ctx.translate(this.x, this.y);
+                    ctx.scale(this.scale, this.scale);
+                    
+                    // Ball body with gradient
+                    const gradient = ctx.createRadialGradient(-5, -5, 0, 0, 0, this.radius);
+                    gradient.addColorStop(0, '#ffffff');
+                    gradient.addColorStop(0.3, CONFIG.colors[this.color]);
+                    gradient.addColorStop(1, this.darkenColor(CONFIG.colors[this.color], 40));
+                    
+                    ctx.beginPath();
+                    ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = gradient;
+                    ctx.fill();
+                    
+                    // Shine effect
+                    ctx.beginPath();
+                    ctx.arc(-5, -5, this.radius * 0.3, 0, Math.PI * 2);
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+                    ctx.fill();
+                    
+                    ctx.restore();
+                }
+            }
+
+            darkenColor(color, amount) {
+                const num = parseInt(color.replace('#', ''), 16);
+                const r = Math.max(0, (num >> 16) - amount);
+                const g = Math.max(0, ((num >> 8) & 0x00FF) - amount);
+                const b = Math.max(0, (num & 0x0000FF) - amount);
+                return `#${(1 << 24 | r << 16 | g << 8 | b).toString(16).slice(1)}`;
+            }
+        }
+
+        // ==================== PROJECTILE CLASS ====================
+        class Projectile {
+            constructor(x, y, vx, vy, color) {
+                this.x = x;
+                this.y = y;
+                this.vx = vx;
+                this.vy = vy;
+                this.ball = new Ball(-1, color, true);
+                this.ball.x = x;
+                this.ball.y = y;
+            }
+
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.ball.x = this.x;
+                this.ball.y = this.y;
+            }
+
+            draw() {
+                this.ball.draw();
+            }
+        }
+
+        // ==================== PARTICLE CLASS ====================
+        class Particle {
+            constructor(x, y, color) {
+                this.x = x;
+                this.y = y;
+                this.color = color;
+                this.vx = (Math.random() - 0.5) * 8;
+                this.vy = (Math.random() - 0.5) * 8;
+                this.life = 1;
+                this.decay = 0.02 + Math.random() * 0.02;
+                this.size = 3 + Math.random() * 5;
+            }
+
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.vy += 0.2; // gravity
+                this.life -= this.decay;
+            }
+
+            draw() {
+                ctx.save();
+                ctx.globalAlpha = this.life;
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        // ==================== GAME FUNCTIONS ====================
+        function startGame() {
+            document.getElementById('startScreen').classList.add('hidden');
+            document.getElementById('gameOver').classList.add('hidden');
+            document.getElementById('pauseScreen').classList.add('hidden');
+            
+            gameState = 'playing';
+            score = 0;
+            level = 1;
+            lives = CONFIG.lives;
+            combo = 0;
+            difficulty = 1;
+            
+            balls = [];
+            projectiles = [];
+            particles = [];
+            
+            cannon.currentColor = Math.floor(Math.random() * CONFIG.colors.length);
+            cannon.nextColor = Math.floor(Math.random() * CONFIG.colors.length);
+            cannon.swapCooldown = 0;
+            
+            spawnBall();
+            updateUI();
+        }
+
+        function spawnBall() {
+            const ball = new Ball(0, cannon.currentColor);
+            balls.push(ball);
+            
+            cannon.currentColor = cannon.nextColor;
+            cannon.nextColor = Math.floor(Math.random() * CONFIG.colors.length);
+            
+            drawNextBall();
+        }
+
+        function drawNextBall() {
+            nextCtx.clearRect(0, 0, nextCanvas.width, nextCanvas.height);
+            
+            const centerX = nextCanvas.width / 2;
+            const centerY = nextCanvas.height / 2;
+            const radius = 25;
+            
+            const gradient = nextCtx.createRadialGradient(
+                centerX - 8, centerY - 8, 0,
+                centerX, centerY, radius
+            );
+            gradient.addColorStop(0, '#ffffff');
+            gradient.addColorStop(0.3, CONFIG.colors[cannon.nextColor]);
+            gradient.addColorStop(1, '#000000');
+            
+            nextCtx.beginPath();
+            nextCtx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+            nextCtx.fillStyle = gradient;
+            nextCtx.fill();
+        }
+
+        function shoot() {
+            if (gameState !== 'playing') return;
+            
+            const vx = Math.cos(cannon.angle) * CONFIG.shootSpeed;
+            const vy = Math.sin(cannon.angle) * CONFIG.shootSpeed;
+            
+            const projectile = new Projectile(
+                cannon.x,
+                cannon.y,
+                vx,
+                vy,
+                cannon.currentColor
+            );
+            
+            projectiles.push(projectile);
+            
+            cannon.currentColor = cannon.nextColor;
+            cannon.nextColor = Math.floor(Math.random() * CONFIG.colors.length);
+            drawNextBall();
+        }
+
+        function swapColors() {
+            if (cannon.swapCooldown <= 0 && gameState === 'playing') {
+                [cannon.currentColor, cannon.nextColor] = [cannon.nextColor, cannon.currentColor];
+                cannon.swapCooldown = 180; // 3 seconds at 60fps
+                drawNextBall();
+            }
+        }
+
+        function checkCollisions() {
+            for (let i = projectiles.length - 1; i >= 0; i--) {
+                const proj = projectiles[i];
+                let collided = false;
+                
+                // Check collision with balls
+                for (let j = 0; j < balls.length; j++) {
+                    const ball = balls[j];
+                    const dx = proj.x - ball.x;
+                    const dy = proj.y - ball.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    
+                    if (dist < CONFIG.ballRadius * 2) {
+                        // Collision detected
+                        collided = true;
+                        
+                        // Insert projectile ball before this ball
+                        const newBall = new Ball(ball.pathIndex, proj.ball.color);
+                        balls.splice(j, 0, newBall);
+                        
+                        // Update path indices
+                        updateBallIndices();
+                        
+                        // Check for matches
+                        checkMatches(j);
+                        
+                        break;
+                    }
+                }
+                
+                // Check if projectile went off screen
+                if (collided || 
+                    proj.x < 0 || proj.x > canvas.width ||
+                    proj.y < 0 || proj.y > canvas.height) {
+                    projectiles.splice(i, 1);
+                }
+            }
+        }
+
+        function updateBallIndices() {
+            const spacing = CONFIG.ballRadius * 2.2;
+            
+            for (let i = 0; i < balls.length; i++) {
+                balls[i].pathIndex = i * spacing;
+                balls[i].updatePosition();
+            }
+        }
+
+        function checkMatches(insertIndex) {
+            const ball = balls[insertIndex];
+            if (!ball) return;
+            
+            const matches = [insertIndex];
+            
+            // Check forward
+            for (let i = insertIndex + 1; i < balls.length; i++) {
+                if (balls[i].color === ball.color) {
+                    matches.push(i);
+                } else {
+                    break;
+                }
+            }
+            
+            // Check backward
+            for (let i = insertIndex - 1; i >= 0; i--) {
+                if (balls[i].color === ball.color) {
+                    matches.push(i);
+                } else {
+                    break;
+                }
+            }
+            
+            if (matches.length >= CONFIG.matchMin) {
+                // Combo system
+                combo++;
+                comboTimer = 120; // 2 seconds
+                
+                // Remove matched balls
+                const multiplier = Math.min(combo, 5);
+                const points = matches.length * 10 * multiplier;
+                score += points;
+                
+                // Create particles
+                matches.sort((a, b) => b - a);
+                matches.forEach(index => {
+                    if (balls[index]) {
+                        createExplosion(balls[index].x, balls[index].y, CONFIG.colors[balls[index].color]);
+                        balls.splice(index, 1);
+                    }
+                });
+                
+                updateBallIndices();
+                updateUI();
+                showCombo();
+                
+                // Check for chain reaction
+                if (balls.length > 0) {
+                    checkChainReactions();
+                }
+                
+                // Check level complete
+                if (balls.length === 0) {
+                    levelUp();
+                }
+            } else {
+                combo = 0;
+            }
+        }
+
+        function checkChainReactions() {
+            const spacing = CONFIG.ballRadius * 2.2;
+            let changed = true;
+            
+            while (changed) {
+                changed = false;
+                
+                for (let i = 0; i < balls.length - 2; i++) {
+                    if (balls[i].color === balls[i + 1].color && 
+                        balls[i].color === balls[i + 2].color) {
+                        
+                        const matches = [i, i + 1, i + 2];
+                        
+                        // Check for more
+                        for (let j = i + 3; j < balls.length; j++) {
+                            if (balls[j].color === balls[i].color) {
+                                matches.push(j);
+                            } else {
+                                break;
+                            }
+                        }
+                        
+                        combo++;
+                        score += matches.length * 10 * Math.min(combo, 5);
+                        
+                        matches.sort((a, b) => b - a);
+                        matches.forEach(index => {
+                            if (balls[index]) {
+                                createExplosion(balls[index].x, balls[index].y, CONFIG.colors[balls[index].color]);
+                                balls.splice(index, 1);
+                            }
+                        });
+                        
+                        updateBallIndices();
+                        updateUI();
+                        changed = true;
+                        break;
+                    }
+                }
+            }
+        }
+
+        function createExplosion(x, y, color) {
+            for (let i = 0; i < 15; i++) {
+                particles.push(new Particle(x, y, color));
+            }
+        }
+
+        function showCombo() {
+            const comboEl = document.getElementById('combo');
+            const comboCount = document.getElementById('comboCount');
+            
+            if (combo > 1) {
+                comboCount.textContent = combo;
+                comboEl.classList.add('show');
+                setTimeout(() => comboEl.classList.remove('show'), 500);
+            }
+        }
+
+        function levelUp() {
+            level++;
+            difficulty += 0.2;
+            
+            const levelEl = document.getElementById('levelIndicator');
+            levelEl.textContent = `LEVEL ${level}!`;
+            levelEl.classList.add('level-animation');
+            
+            setTimeout(() => {
+                levelEl.classList.remove('level-animation');
+            }, 1500);
+            
+            // Spawn new balls for next level
+            setTimeout(() => {
+                const ballCount = 10 + level * 3;
+                for (let i = 0; i < ballCount; i++) {
+                    setTimeout(() => {
+                        if (gameState === 'playing') {
+                            const ball = new Ball(0, Math.floor(Math.random() * CONFIG.colors.length));
+                            balls.push(ball);
+                            updateBallIndices();
+                        }
+                    }, i * 300);
+                }
+            }, 1000);
+            
+            updateUI();
+        }
+
+        function updateUI() {
+            document.getElementById('scoreValue').textContent = score.toLocaleString();
+            document.getElementById('levelValue').textContent = level;
+            
+            let hearts = '';
+            for (let i = 0; i < lives; i++) {
+                hearts += '❤️';
+            }
+            document.getElementById('livesValue').textContent = hearts || '💔';
+        }
+
+        function checkGameOver() {
+            const endPathIndex = path.length - 1;
+            
+            for (let i = 0; i < balls.length; i++) {
+                if (balls[i].pathIndex >= endPathIndex - 10) {
+                    lives--;
+                    updateUI();
+                    
+                    // Remove balls that reached the end
+                    balls.splice(0, i + 1);
+                    updateBallIndices();
+                    
+                    if (lives <= 0) {
+                        gameOver();
+                    }
+                    break;
+                }
+            }
+        }
+
+        function gameOver() {
+            gameState = 'gameover';
+            document.getElementById('finalScore').textContent = score.toLocaleString();
+            document.getElementById('finalLevel').textContent = level;
+            document.getElementById('gameOver').classList.remove('hidden');
+        }
+
+        function togglePause() {
+            if (gameState === 'playing') {
+                gameState = 'paused';
+                document.getElementById('pauseScreen').classList.remove('hidden');
+            } else if (gameState === 'paused') {
+                gameState = 'playing';
+                document.getElementById('pauseScreen').classList.add('hidden');
+            }
+        }
+
+        function quitGame() {
+            document.getElementById('pauseScreen').classList.add('hidden');
+            document.getElementById('startScreen').classList.remove('hidden');
+            gameState = 'start';
+        }
+
+        // ==================== DRAWING FUNCTIONS ====================
+        function drawPath() {
+            ctx.save();
+            ctx.strokeStyle = 'rgba(0, 100, 255, 0.3)';
+            ctx.lineWidth = CONFIG.ballRadius * 2.5;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            
+            ctx.beginPath();
+            ctx.moveTo(path[0].x, path[0].y);
+            
+            for (let i = 1; i < path.length; i++) {
+                ctx.lineTo(path[i].x, path[i].y);
+            }
+            
+            ctx.stroke();
+            
+            // Inner glow
+            ctx.strokeStyle = 'rgba(0, 200, 255, 0.1)';
+            ctx.lineWidth = CONFIG.ballRadius * 2;
+            ctx.stroke();
+            
+            ctx.restore();
+        }
+
+        function drawCannon() {
+            ctx.save();
+            ctx.translate(cannon.x, cannon.y);
+            ctx.rotate(cannon.angle);
+            
+            // Cannon base
+            const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, 50);
+            gradient.addColorStop(0, '#4444ff');
+            gradient.addColorStop(1, '#0000aa');
+            
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.arc(0, 0, 50, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Cannon barrel
+            ctx.fillStyle = '#6666ff';
+            ctx.fillRect(0, -15, 70, 30);
+            
+            // Current ball in cannon
+            const ballGradient = ctx.createRadialGradient(-5, -5, 0, 0, 0, CONFIG.ballRadius);
+            ballGradient.addColorStop(0, '#ffffff');
+            ballGradient.addColorStop(0.3, CONFIG.colors[cannon.currentColor]);
+            ballGradient.addColorStop(1, '#000066');
+            
+            ctx.fillStyle = ballGradient;
+            ctx.beginPath();
+            ctx.arc(55, 0, CONFIG.ballRadius, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Swap indicator
+            if (cannon.swapCooldown <= 0) {
+                ctx.fillStyle = 'rgba(0, 255, 255, 0.5)';
+                ctx.beginPath();
+                ctx.arc(0, 0, 55, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+            
+            ctx.restore();
+        }
+
+        // ==================== GAME LOOP ====================
+        function gameLoop(timestamp) {
+            const deltaTime = timestamp - lastTime;
+            lastTime = timestamp;
+            
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw path
+            drawPath();
+            
+            if (gameState === 'playing') {
+                // Update combo timer
+                if (comboTimer > 0) {
+                    comboTimer--;
+                    if (comboTimer <= 0) {
+                        combo = 0;
+                    }
+                }
+                
+                // Update swap cooldown
+                if (cannon.swapCooldown > 0) {
+                    cannon.swapCooldown--;
+                }
+                
+                // Spawn timer
+                spawnTimer += deltaTime;
+                const currentSpawnInterval = CONFIG.spawnInterval / difficulty;
+                
+                if (spawnTimer > currentSpawnInterval && balls.length < 50) {
+                    spawnBall();
+                    spawnTimer = 0;
+                }
+                
+                // Move balls
+                const speed = CONFIG.ballSpeed * difficulty;
+                balls.forEach(ball => {
+                    ball.pathIndex += speed;
+                    ball.updatePosition();
+                });
+                
+                // Update projectiles
+                projectiles.forEach(proj => proj.update());
+                
+                // Update particles
+                particles.forEach((particle, index) => {
+                    particle.update();
+                    if (particle.life <= 0) {
+                        particles.splice(index, 1);
+                    }
+                });
+                
+                // Check collisions
+                checkCollisions();
+                
+                // Check game over
+                checkGameOver();
+            }
+            
+            // Draw everything
+            balls.forEach(ball => ball.draw());
+            projectiles.forEach(proj => proj.draw());
+            particles.forEach(particle => particle.draw());
+            
+            if (gameState === 'playing' || gameState === 'paused') {
+                drawCannon();
+            }
+            
+            requestAnimationFrame(gameLoop);
+        }
+
+        // ==================== EVENT LISTENERS ====================
+        canvas.addEventListener('mousemove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+            
+            cannon.angle = Math.atan2(mouseY - cannon.y, mouseX - cannon.x);
+        });
+
+        canvas.addEventListener('mousedown', (e) => {
+            if (e.button === 0) { // Left click
+                shoot();
+            } else if (e.button === 2) { // Right click
+                swapColors();
+            }
+        });
+
+        canvas.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' || e.code === 'Escape') {
+                if (gameState === 'playing' || gameState === 'paused') {
+                    togglePause();
+                }
+            }
+        });
+    </script>
+</body>
+</html>
